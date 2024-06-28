@@ -1,0 +1,58 @@
+model:
+    target: enhancing.modules.stage2.transformer.CondTransformer
+    params:
+        cond_key: class
+        cond: 
+            target: enhancing.modules.cond.dummycond.ClassCond
+            params:
+                image_size: 256
+                class_name: assets/class/imagenet.txt
+        stage1:
+            target: enhancing.modules.stage1.vitvqgan.ViTVQ
+            params:
+                image_key: image
+                path: weight/imagenet_vitvq_base.ckpt
+                image_size: 256
+                patch_size: 8
+                encoder:
+                    dim: 768
+                    depth: 12
+                    heads: 12
+                    mlp_dim: 3072
+                decoder:
+                    dim: 768
+                    depth: 12
+                    heads: 12
+                    mlp_dim: 3072
+                quantizer:
+                    embed_dim: 32
+                    n_embed: 8192
+                loss:
+                    target: enhancing.losses.vqperceptual.DummyLoss
+        transformer:
+            target: enhancing.modules.stage2.layers.GPT
+            params:
+                vocab_cond_size: 1000
+                vocab_img_size: 8192
+                embed_dim: 6144
+                cond_num_tokens: 1
+                img_num_tokens: 1024 
+                n_heads: 16
+                n_layers: 24
+                
+dataset:
+    target: enhancing.dataloader.DataModuleFromConfig
+    params:
+        batch_size: 4
+        num_workers: 2
+        train:
+            target: enhancing.dataloader.imagenet.ImageNetTrain
+            params:
+                root: data/ilsvrc2012
+                resolution: 256
+                
+        validation:
+            target: enhancing.dataloader.imagenet.ImageNetValidation
+            params:
+                root: data/ilsvrc2012
+                resolution: 256
