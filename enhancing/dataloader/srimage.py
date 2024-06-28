@@ -21,13 +21,15 @@ from torchvision import transforms as T
 class SRBase(Dataset):
     def __init__(self, folder: str, split: str, transform: Callable) -> None:
         super().__init__()
-        path = Path(folder)/split
+        path = Path(folder) / split
 
         image_files = [
-            *path.glob('**/*.png'), *path.glob('**/*.jpg'),
-            *path.glob('**/*.jpeg'), *path.glob('**/*.bmp')
+            *path.glob("**/*.png"),
+            *path.glob("**/*.jpg"),
+            *path.glob("**/*.jpeg"),
+            *path.glob("**/*.bmp"),
         ]
-        
+
         image_files = {image_file.stem: image_file for image_file in image_files}
         keys = image_files.keys()
 
@@ -35,7 +37,7 @@ class SRBase(Dataset):
         self.image_files = {k: v for k, v in image_files.items() if k in keys}
 
         self.hr_transform = transform
-        
+
     def __len__(self):
         return len(self.keys)
 
@@ -50,7 +52,7 @@ class SRBase(Dataset):
     def skip_sample(self, ind):
         return self.sequential_sample(ind=ind)
 
-    def pad(self, img: PIL.Image.Image) ->  PIL.Image.Image:
+    def pad(self, img: PIL.Image.Image) -> PIL.Image.Image:
         if isinstance(self.resolution, int):
             self.resolution = (self.resolution, self.resolution)
 
@@ -59,7 +61,7 @@ class SRBase(Dataset):
         top = (self.resolution[0] - img.size[1]) // 2
         right = self.resolution[1] - img.size[0] - left
         bottom = self.resolution[0] - img.size[1] - top
-        
+
         return T.functional.pad(img, (left, top, right, bottom))
 
     def __getitem__(self, ind):
@@ -68,12 +70,15 @@ class SRBase(Dataset):
 
         try:
             hr_img = PIL.Image.open(image_file)
-            if hr_img.mode != 'RGB':
-                hr_img = hr_img.convert('RGB')
-                
+            if hr_img.mode != "RGB":
+                hr_img = hr_img.convert("RGB")
+
             hr_tensor = self.hr_transform(hr_img)
 
-            down_size = (hr_tensor.shape[1]//self.downscale, hr_tensor.shape[2]//self.downscale)
+            down_size = (
+                hr_tensor.shape[1] // self.downscale,
+                hr_tensor.shape[2] // self.downscale,
+            )
             lr_tensor = T.Resize(down_size, 3)(hr_tensor)
         except (PIL.UnidentifiedImageError, OSError) as corrupt_image_exceptions:
             print(f"An exception occurred trying to load file {image_file}.")
@@ -81,41 +86,45 @@ class SRBase(Dataset):
             return self.skip_sample(ind)
 
         # Success
-        return {'low resolution': lr_tensor, 'high resolution': hr_tensor}
+        return {"low resolution": lr_tensor, "high resolution": hr_tensor}
 
 
 class SRTrain(SRBase):
-    def __init__(self, folder: str,
-                 resolution: Union[Tuple[int, int], int] = 2048,
-                 crop_resolution: Union[Tuple[int, int], int] = 512,
-                 downscale: int = 4) -> None:
+    def __init__(
+        self,
+        folder: str,
+        resolution: Union[Tuple[int, int], int] = 2048,
+        crop_resolution: Union[Tuple[int, int], int] = 512,
+        downscale: int = 4,
+    ) -> None:
         assert resolution % downscale == 0
         self.resolution = resolution
         self.downscale = downscale
 
-        transform = T.Compose([
-            T.RandomCrop(crop_resolution),
-            T.Lambda(self.pad),
-            T.RandomHorizontalFlip(),
-            T.RandomVerticalFlip(),
-            T.ToTensor()
-        ])        
-        
-        super().__init__(folder, 'train', transform)
-        
+        transform = T.Compose(
+            [
+                T.RandomCrop(crop_resolution),
+                T.Lambda(self.pad),
+                T.RandomHorizontalFlip(),
+                T.RandomVerticalFlip(),
+                T.ToTensor(),
+            ]
+        )
+
+        super().__init__(folder, "train", transform)
+
 
 class SRValidation(SRBase):
-    def __init__(self, folder: str,
-                 resolution: Union[Tuple[int, int], int] = 2048,
-                 downscale: int = 4) -> None:
+    def __init__(
+        self,
+        folder: str,
+        resolution: Union[Tuple[int, int], int] = 2048,
+        downscale: int = 4,
+    ) -> None:
         assert resolution % downscale == 0
         self.resolution = resolution
         self.downscale = downscale
-        
-        transform = T.Compose([
-            T.Lambda(self.pad),
-            T.ToTensor()
-        ])
 
-        super().__init__(folder, 'val', transform)
-        
+        transform = T.Compose([T.Lambda(self.pad), T.ToTensor()])
+
+        super().__init__(folder, "val", transform)

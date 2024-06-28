@@ -19,41 +19,62 @@ from kornia.filters import filter2d
 from .op import FusedLeakyReLU, fused_leaky_relu, upfirdn2d, conv2d_gradfix
 
 
-def hinge_d_loss(logits_fake: torch.FloatTensor, logits_real: Optional[torch.FloatTensor] = None) -> torch.FloatTensor:
-    loss_fake = - logits_fake.mean() * 2 if logits_real is None else F.relu(1. + logits_fake).mean() 
-    loss_real = 0 if logits_real is None else F.relu(1. - logits_real).mean()
-    
+def hinge_d_loss(
+    logits_fake: torch.FloatTensor, logits_real: Optional[torch.FloatTensor] = None
+) -> torch.FloatTensor:
+    loss_fake = (
+        -logits_fake.mean() * 2
+        if logits_real is None
+        else F.relu(1.0 + logits_fake).mean()
+    )
+    loss_real = 0 if logits_real is None else F.relu(1.0 - logits_real).mean()
+
     return 0.5 * (loss_real + loss_fake)
 
 
-def vanilla_d_loss(logits_fake: torch.FloatTensor, logits_real: Optional[torch.FloatTensor] = None) -> torch.FloatTensor:
-    loss_fake = F.softplus(-logits_fake).mean() * 2 if logits_real is None else F.softplus(logits_fake).mean()
+def vanilla_d_loss(
+    logits_fake: torch.FloatTensor, logits_real: Optional[torch.FloatTensor] = None
+) -> torch.FloatTensor:
+    loss_fake = (
+        F.softplus(-logits_fake).mean() * 2
+        if logits_real is None
+        else F.softplus(logits_fake).mean()
+    )
     loss_real = 0 if logits_real is None else F.softplus(-logits_real).mean()
-    
+
     return 0.5 * (loss_real + loss_fake)
 
 
-def least_square_d_loss(logits_fake: torch.FloatTensor, logits_real: Optional[torch.FloatTensor] = None) -> torch.FloatTensor:
-    loss_fake = logits_fake.pow(2).mean() * 2 if logits_real is None else (1 + logits_fake).pow(2).mean()
-    loss_real = 0 if logits_real is None else (1 - logits_real).pow(2).mean() 
-    
+def least_square_d_loss(
+    logits_fake: torch.FloatTensor, logits_real: Optional[torch.FloatTensor] = None
+) -> torch.FloatTensor:
+    loss_fake = (
+        logits_fake.pow(2).mean() * 2
+        if logits_real is None
+        else (1 + logits_fake).pow(2).mean()
+    )
+    loss_real = 0 if logits_real is None else (1 - logits_real).pow(2).mean()
+
     return 0.5 * (loss_real + loss_fake)
 
 
 def weights_init(m: nn.Module) -> None:
     classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
+    if classname.find("Conv") != -1:
         nn.init.normal_(m.weight.data, 0.0, 0.02)
-    elif classname.find('BatchNorm') != -1:
+    elif classname.find("BatchNorm") != -1:
         nn.init.normal_(m.weight.data, 1.0, 0.02)
         nn.init.constant_(m.bias.data, 0)
 
 
 class ActNorm(nn.Module):
-    def __init__(self, num_features: int,
-                 logdet: Optional[bool] = False,
-                 affine: Optional[bool] = True,
-                 allow_reverse_init: Optional[bool] = False) -> None:
+    def __init__(
+        self,
+        num_features: int,
+        logdet: Optional[bool] = False,
+        affine: Optional[bool] = True,
+        allow_reverse_init: Optional[bool] = False,
+    ) -> None:
         assert affine
         super().__init__()
         self.logdet = logdet
@@ -61,7 +82,7 @@ class ActNorm(nn.Module):
         self.scale = nn.Parameter(torch.ones(1, num_features, 1, 1))
         self.allow_reverse_init = allow_reverse_init
 
-        self.register_buffer('initialized', torch.tensor(0, dtype=torch.uint8))
+        self.register_buffer("initialized", torch.tensor(0, dtype=torch.uint8))
 
     def initialize(self, input: torch.FloatTensor) -> None:
         with torch.no_grad():
@@ -84,11 +105,13 @@ class ActNorm(nn.Module):
             self.loc.data.copy_(-mean)
             self.scale.data.copy_(1 / (std + 1e-6))
 
-    def forward(self, input: torch.FloatTensor, reverse: Optional[bool] = False) -> Union[torch.FloatTensor, Tuple]:
+    def forward(
+        self, input: torch.FloatTensor, reverse: Optional[bool] = False
+    ) -> Union[torch.FloatTensor, Tuple]:
         if reverse:
             return self.reverse(input)
         if len(input.shape) == 2:
-            input = input[:,:,None,None]
+            input = input[:, :, None, None]
             squeeze = True
         else:
             squeeze = False
@@ -106,7 +129,7 @@ class ActNorm(nn.Module):
 
         if self.logdet:
             log_abs = torch.log(torch.abs(self.scale))
-            logdet = height*width*torch.sum(log_abs)
+            logdet = height * width * torch.sum(log_abs)
             logdet = logdet * torch.ones(input.shape[0]).to(input)
             return h, logdet
 
@@ -124,7 +147,7 @@ class ActNorm(nn.Module):
                 self.initialized.fill_(1)
 
         if len(output.shape) == 2:
-            output = output[:,:,None,None]
+            output = output[:, :, None, None]
             squeeze = True
         else:
             squeeze = False
@@ -133,7 +156,7 @@ class ActNorm(nn.Module):
 
         if squeeze:
             h = h.squeeze(-1).squeeze(-1)
-            
+
         return h
 
 
@@ -148,7 +171,7 @@ class Blur(nn.Module):
         kernel /= kernel.sum()
 
         if upsample_factor > 1:
-            kernel = kernel * (upsample_factor ** 2)
+            kernel = kernel * (upsample_factor**2)
 
         self.register_buffer("kernel", kernel)
 
@@ -161,13 +184,17 @@ class Blur(nn.Module):
 
 
 class EqualConv2d(nn.Module):
-    def __init__(self, in_channel, out_channel, kernel_size, stride=1, padding=0, bias=True):
+    def __init__(
+        self, in_channel, out_channel, kernel_size, stride=1, padding=0, bias=True
+    ):
         super().__init__()
 
-        self.weight = nn.Parameter(torch.randn(out_channel, in_channel, kernel_size, kernel_size))
+        self.weight = nn.Parameter(
+            torch.randn(out_channel, in_channel, kernel_size, kernel_size)
+        )
         self.bias = nn.Parameter(torch.zeros(out_channel)) if bias else None
-        
-        self.scale = 1 / sqrt(in_channel * kernel_size ** 2)
+
+        self.scale = 1 / sqrt(in_channel * kernel_size**2)
 
         self.stride = stride
         self.padding = padding
@@ -191,7 +218,9 @@ class EqualLinear(nn.Module):
         super().__init__()
 
         self.weight = nn.Parameter(torch.randn(out_dim, in_dim).div_(lr_mul))
-        self.bias = nn.Parameter(torch.zeros(out_dim).fill_(bias_init)) if bias else None
+        self.bias = (
+            nn.Parameter(torch.zeros(out_dim).fill_(bias_init)) if bias else None
+        )
 
         self.activation = activation
 
@@ -212,7 +241,16 @@ class EqualLinear(nn.Module):
 
 
 class ConvLayer(nn.Sequential):
-    def __init__(self, in_channel, out_channel, kernel_size, downsample=False, blur_kernel=[1, 3, 3, 1], bias=True, activate=True):
+    def __init__(
+        self,
+        in_channel,
+        out_channel,
+        kernel_size,
+        downsample=False,
+        blur_kernel=[1, 3, 3, 1],
+        bias=True,
+        activate=True,
+    ):
         layers = []
 
         if downsample:
@@ -231,9 +269,12 @@ class ConvLayer(nn.Sequential):
 
         layers.append(
             EqualConv2d(
-                in_channel, out_channel, 
-                kernel_size, padding=self.padding, 
-                stride=stride, bias=bias and not activate
+                in_channel,
+                out_channel,
+                kernel_size,
+                padding=self.padding,
+                stride=stride,
+                bias=bias and not activate,
             )
         )
 
@@ -266,9 +307,16 @@ class StyleBlock(nn.Module):
 
 class PatchDiscriminator(nn.Module):
     """Defines a PatchGAN discriminator as in Pix2Pix
-        --> see https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/blob/master/models/networks.py
+    --> see https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/blob/master/models/networks.py
     """
-    def __init__(self, input_nc: int = 3, ndf: int = 64, n_layers: int = 3, use_actnorm: bool = False) -> None:
+
+    def __init__(
+        self,
+        input_nc: int = 3,
+        ndf: int = 64,
+        n_layers: int = 3,
+        use_actnorm: bool = False,
+    ) -> None:
         """Construct a PatchGAN discriminator
         Parameters:
             input_nc (int)  -- the number of channels in input images
@@ -281,35 +329,55 @@ class PatchDiscriminator(nn.Module):
             norm_layer = nn.BatchNorm2d
         else:
             norm_layer = ActNorm
-        if type(norm_layer) == partial:  # no need to use bias as BatchNorm2d has affine parameters
+        if (
+            type(norm_layer) == partial
+        ):  # no need to use bias as BatchNorm2d has affine parameters
             use_bias = norm_layer.func != nn.BatchNorm2d
         else:
             use_bias = norm_layer != nn.BatchNorm2d
 
         kw = 4
         padw = 1
-        sequence = [nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw), nn.LeakyReLU(0.2, True)]
+        sequence = [
+            nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw),
+            nn.LeakyReLU(0.2, True),
+        ]
         nf_mult = 1
         nf_mult_prev = 1
         for n in range(1, n_layers):  # gradually increase the number of filters
             nf_mult_prev = nf_mult
-            nf_mult = min(2 ** n, 8)
+            nf_mult = min(2**n, 8)
             sequence += [
-                nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=2, padding=padw, bias=use_bias),
+                nn.Conv2d(
+                    ndf * nf_mult_prev,
+                    ndf * nf_mult,
+                    kernel_size=kw,
+                    stride=2,
+                    padding=padw,
+                    bias=use_bias,
+                ),
                 norm_layer(ndf * nf_mult),
-                nn.LeakyReLU(0.2, True)
+                nn.LeakyReLU(0.2, True),
             ]
 
         nf_mult_prev = nf_mult
-        nf_mult = min(2 ** n_layers, 8)
+        nf_mult = min(2**n_layers, 8)
         sequence += [
-            nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=1, padding=padw, bias=use_bias),
+            nn.Conv2d(
+                ndf * nf_mult_prev,
+                ndf * nf_mult,
+                kernel_size=kw,
+                stride=1,
+                padding=padw,
+                bias=use_bias,
+            ),
             norm_layer(ndf * nf_mult),
-            nn.LeakyReLU(0.2, True)
+            nn.LeakyReLU(0.2, True),
         ]
 
         sequence += [
-            nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]  # output 1 channel prediction map
+            nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)
+        ]  # output 1 channel prediction map
         self.main = nn.Sequential(*sequence)
 
         self.apply(weights_init)
@@ -360,8 +428,8 @@ class StyleDiscriminator(nn.Module):
         batch, channel, height, width = out.shape
 
         group = min(batch, self.stddev_group)
-        group = batch//(batch//group)
-        
+        group = batch // (batch // group)
+
         stddev = out.view(
             group, -1, self.stddev_feat, channel // self.stddev_feat, height, width
         )
@@ -369,9 +437,9 @@ class StyleDiscriminator(nn.Module):
         stddev = stddev.mean([2, 3, 4], keepdims=True).squeeze(2)
         stddev = stddev.repeat(group, 1, height, width)
         out = torch.cat([out, stddev], 1)
-        
+
         out = self.final_conv(out)
         out = out.view(out.shape[0], -1)
         out = self.final_linear(out)
-             
+
         return out.squeeze()

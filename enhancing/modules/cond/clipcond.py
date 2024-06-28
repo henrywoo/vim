@@ -18,8 +18,12 @@ from ...utils.general import initialize_from_config
 
 
 class ClipTextCond(DummyCond):
-    def __init__(self, image_size: Union[Tuple[int, int], int],
-                 clip_model: str, tokenizer: OmegaConf) -> None:
+    def __init__(
+        self,
+        image_size: Union[Tuple[int, int], int],
+        clip_model: str,
+        tokenizer: OmegaConf,
+    ) -> None:
         super().__init__()
         self.image_size = image_size
         self.clip_model, _ = clip.load(clip_model, device=device)
@@ -32,32 +36,42 @@ class ClipTextCond(DummyCond):
         return text_features
 
     def to_img(self, texts: torch.LongTensor) -> torch.FloatTensor:
-        W, H = self.image_size if isinstance(self.image_size, tuple) else (self.image_size, self.image_size)
+        W, H = (
+            self.image_size
+            if isinstance(self.image_size, tuple)
+            else (self.image_size, self.image_size)
+        )
         font = ImageFont.truetype("arial.ttf", 12)
-        
+
         imgs = []
         for text in texts:
             text = self.tokenizer.decode(text)
             words = text.split()
             length = 0
-            
+
             for idx, word in enumerate(words):
                 if length > 27:
                     length = 0
-                    word[idx-int(idx>0)] += '\n'
+                    word[idx - int(idx > 0)] += "\n"
 
                 length += len(word)
-                
+
             img = Image.new("RGBA", (W, H), "white")
             draw = ImageDraw.Draw(img)
-            
-            w, h = draw.textsize(text, font)
-            draw.text(((W-w)/2,(H-h)/2), text, font=font, fill="black", align="center")
 
-            img = img.convert('RGB')
+            w, h = draw.textsize(text, font)
+            draw.text(
+                ((W - w) / 2, (H - h) / 2),
+                text,
+                font=font,
+                fill="black",
+                align="center",
+            )
+
+            img = img.convert("RGB")
             img = T.ToTensor()(img)
             imgs.append(img)
- 
+
         return torch.stack(imgs, dim=0)
 
 

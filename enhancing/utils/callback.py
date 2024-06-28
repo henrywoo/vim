@@ -19,43 +19,58 @@ from pytorch_lightning.callbacks import Callback
 
 
 class SetupCallback(Callback):
-    def __init__(self, config: OmegaConf, exp_config: OmegaConf, basedir: Path, logdir: str = "log", ckptdir:str = "ckpt") -> None:
+    def __init__(
+        self,
+        config: OmegaConf,
+        exp_config: OmegaConf,
+        basedir: Path,
+        logdir: str = "log",
+        ckptdir: str = "ckpt",
+    ) -> None:
         super().__init__()
         self.logdir = basedir / logdir
         self.ckptdir = basedir / ckptdir
         self.config = config
         self.exp_config = exp_config
-        
-    def on_pretrain_routine_start(self, trainer: pl.trainer.Trainer, pl_module: pl.LightningModule) -> None:
+
+    def on_pretrain_routine_start(
+        self, trainer: pl.trainer.Trainer, pl_module: pl.LightningModule
+    ) -> None:
         if trainer.global_rank == 0:
             # Create logdirs and save configs
             os.makedirs(self.logdir, exist_ok=True)
             os.makedirs(self.ckptdir, exist_ok=True)
-            
+
             print("Experiment config")
             print(self.exp_config.pretty())
 
             print("Model config")
             print(self.config.pretty())
-            
-            
+
+
 class ImageLogger(Callback):
-    def __init__(self, batch_frequency: int, max_images: int, clamp: bool = True, increase_log_steps: bool =True) -> None:
+    def __init__(
+        self,
+        batch_frequency: int,
+        max_images: int,
+        clamp: bool = True,
+        increase_log_steps: bool = True,
+    ) -> None:
         super().__init__()
         self.batch_freq = batch_frequency
         self.max_images = max_images
         self.logger_log_images = {
             pl.loggers.WandbLogger: self._wandb,
-            #pl.loggers.TestTubeLogger: self._testtube,
+            # pl.loggers.TestTubeLogger: self._testtube,
         }
-        self.log_steps = [2 ** n for n in range(int(np.log2(self.batch_freq)) + 1)]
+        self.log_steps = [2**n for n in range(int(np.log2(self.batch_freq)) + 1)]
         if not increase_log_steps:
             self.log_steps = [self.batch_freq]
         self.clamp = clamp
 
     @rank_zero_only
     def _wandb(self, pl_module, images, batch_idx, split):
-        #raise ValueError("No way wandb")
+        # raise ValueError("No way wandb")
         grids = dict()
         for k in images:
             grid = torchvision.utils.make_grid(images[k])
@@ -66,38 +81,51 @@ class ImageLogger(Callback):
     def _testtube(self, pl_module, images, batch_idx, split):
         for k in images:
             grid = torchvision.utils.make_grid(images[k])
-            grid = (grid+1.0)/2.0 # -1,1 -> 0,1; c,h,w
+            grid = (grid + 1.0) / 2.0  # -1,1 -> 0,1; c,h,w
 
             tag = f"{split}/{k}"
             pl_module.logger.experiment.add_image(
-                tag, grid,
-                global_step=pl_module.global_step)
+                tag, grid, global_step=pl_module.global_step
+            )
 
     @rank_zero_only
-    def log_local(self, save_dir: str, split: str, images: Dict,
-                  global_step: int, current_epoch: int, batch_idx: int) -> None:
+    def log_local(
+        self,
+        save_dir: str,
+        split: str,
+        images: Dict,
+        global_step: int,
+        current_epoch: int,
+        batch_idx: int,
+    ) -> None:
         root = os.path.join(save_dir, "results", split)
         os.makedirs(root, exist_ok=True)
         for k in images:
             grid = torchvision.utils.make_grid(images[k], nrow=4)
 
-            grid = grid.transpose(0,1).transpose(1,2).squeeze(-1)
+            grid = grid.transpose(0, 1).transpose(1, 2).squeeze(-1)
             grid = grid.numpy()
-            grid = (grid*255).astype(np.uint8)
+            grid = (grid * 255).astype(np.uint8)
             filename = "{}_gs-{:06}_e-{:06}_b-{:06}.png".format(
-                k,
-                global_step,
-                current_epoch,
-                batch_idx)
+                k, global_step, current_epoch, batch_idx
+            )
             path = os.path.join(root, filename)
             os.makedirs(os.path.split(path)[0], exist_ok=True)
             Image.fromarray(grid).save(path)
-            
-    def log_img(self, pl_module: pl.LightningModule, batch: Tuple[torch.LongTensor, torch.FloatTensor], batch_idx: int, split: str = "train") -> None:
-        if (self.check_frequency(batch_idx) and  # batch_idx % self.batch_freq == 0
-                hasattr(pl_module, "log_images") and
-                callable(pl_module.log_images) and
-                self.max_images > 0):
+
+    def log_img(
+        self,
+        pl_module: pl.LightningModule,
+        batch: Tuple[torch.LongTensor, torch.FloatTensor],
+        batch_idx: int,
+        split: str = "train",
+    ) -> None:
+        if (
+            self.check_frequency(batch_idx)
+            and hasattr(pl_module, "log_images")  # batch_idx % self.batch_freq == 0
+            and callable(pl_module.log_images)
+            and self.max_images > 0
+        ):
             logger = type(pl_module.logger)
 
             is_train = pl_module.training
@@ -113,10 +141,18 @@ class ImageLogger(Callback):
                 if self.clamp:
                     images[k] = images[k].clamp(0, 1)
 
-            self.log_local(pl_module.logger.save_dir, split, images,
-                           pl_module.global_step, pl_module.current_epoch, batch_idx)
+            self.log_local(
+                pl_module.logger.save_dir,
+                split,
+                images,
+                pl_module.global_step,
+                pl_module.current_epoch,
+                batch_idx,
+            )
 
-            logger_log_images = self.logger_log_images.get(logger, lambda *args, **kwargs: None)
+            logger_log_images = self.logger_log_images.get(
+                logger, lambda *args, **kwargs: None
+            )
             logger_log_images(pl_module, images, pl_module.global_step, split)
 
             if is_train:
@@ -131,11 +167,23 @@ class ImageLogger(Callback):
             return True
         return False
 
-    def on_train_batch_end(self, trainer: pl.trainer.Trainer, pl_module: pl.LightningModule,
-                           outputs: Generic, batch: Tuple[torch.LongTensor, torch.FloatTensor], batch_idx: int) -> None:
+    def on_train_batch_end(
+        self,
+        trainer: pl.trainer.Trainer,
+        pl_module: pl.LightningModule,
+        outputs: Generic,
+        batch: Tuple[torch.LongTensor, torch.FloatTensor],
+        batch_idx: int,
+    ) -> None:
         self.log_img(pl_module, batch, batch_idx, split="train")
 
-    def on_validation_batch_end(self, trainer: pl.trainer.Trainer, pl_module: pl.LightningModule,
-                                outputs: Generic, batch: Tuple[torch.LongTensor, torch.FloatTensor],
-                                batch_idx: int, dataloader_idx=0) -> None:
+    def on_validation_batch_end(
+        self,
+        trainer: pl.trainer.Trainer,
+        pl_module: pl.LightningModule,
+        outputs: Generic,
+        batch: Tuple[torch.LongTensor, torch.FloatTensor],
+        batch_idx: int,
+        dataloader_idx=0,
+    ) -> None:
         self.log_img(pl_module, batch, batch_idx, split="val")

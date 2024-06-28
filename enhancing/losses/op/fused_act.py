@@ -45,7 +45,7 @@ class FusedLeakyReLUFunctionBackward(Function):
 
     @staticmethod
     def backward(ctx, gradgrad_input, gradgrad_bias):
-        out, = ctx.saved_tensors
+        (out,) = ctx.saved_tensors
         gradgrad_out = fused.fused_bias_act(
             gradgrad_input.contiguous(),
             gradgrad_bias,
@@ -78,7 +78,7 @@ class FusedLeakyReLUFunction(Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        out, = ctx.saved_tensors
+        (out,) = ctx.saved_tensors
 
         grad_input, grad_bias = FusedLeakyReLUFunctionBackward.apply(
             grad_output, out, ctx.bias, ctx.negative_slope, ctx.scale
@@ -91,7 +91,7 @@ class FusedLeakyReLUFunction(Function):
 
 
 class FusedLeakyReLU(nn.Module):
-    def __init__(self, channel, bias=True, negative_slope=0.2, scale=2 ** 0.5):
+    def __init__(self, channel, bias=True, negative_slope=0.2, scale=2**0.5):
         super().__init__()
 
         if bias:
@@ -107,7 +107,7 @@ class FusedLeakyReLU(nn.Module):
         return fused_leaky_relu(input, self.bias, self.negative_slope, self.scale)
 
 
-def fused_leaky_relu(input, bias=None, negative_slope=0.2, scale=2 ** 0.5):
+def fused_leaky_relu(input, bias=None, negative_slope=0.2, scale=2**0.5):
     if input.device.type == "cpu":
         if bias is not None:
             rest_dim = [1] * (input.ndim - bias.ndim - 1)

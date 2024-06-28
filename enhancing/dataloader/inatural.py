@@ -85,15 +85,21 @@ class INaturalistBase(VisionDataset):
     ) -> None:
         self.version = verify_str_arg(version, "version", DATASET_URLS.keys())
 
-        super().__init__(os.path.join(root, version), transform=transform, target_transform=target_transform)
+        super().__init__(
+            os.path.join(root, version),
+            transform=transform,
+            target_transform=target_transform,
+        )
 
         os.makedirs(root, exist_ok=True)
-        path_exist = os.path.isdir(os.path.join(root,version))
+        path_exist = os.path.isdir(os.path.join(root, version))
         if not path_exist:
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
+            raise RuntimeError(
+                "Dataset not found or corrupted. You can use download=True to download it"
+            )
 
         self.all_categories: List[str] = []
 
@@ -106,10 +112,15 @@ class INaturalistBase(VisionDataset):
         if not isinstance(target_type, list):
             target_type = [target_type]
         if self.version[:4] == "2021":
-            self.target_type = [verify_str_arg(t, "target_type", ("full", *CATEGORIES_2021)) for t in target_type]
+            self.target_type = [
+                verify_str_arg(t, "target_type", ("full", *CATEGORIES_2021))
+                for t in target_type
+            ]
             self._init_2021()
         else:
-            self.target_type = [verify_str_arg(t, "target_type", ("full", "super")) for t in target_type]
+            self.target_type = [
+                verify_str_arg(t, "target_type", ("full", "super")) for t in target_type
+            ]
             self._init_pre2021()
 
         # index of all files: (full category id, filename)
@@ -131,9 +142,13 @@ class INaturalistBase(VisionDataset):
         for dir_index, dir_name in enumerate(self.all_categories):
             pieces = dir_name.split("_")
             if len(pieces) != 8:
-                raise RuntimeError(f"Unexpected category name {dir_name}, wrong number of pieces")
+                raise RuntimeError(
+                    f"Unexpected category name {dir_name}, wrong number of pieces"
+                )
             if pieces[0] != f"{dir_index:05d}":
-                raise RuntimeError(f"Unexpected category id {pieces[0]}, expecting {dir_index:05d}")
+                raise RuntimeError(
+                    f"Unexpected category id {pieces[0]}, expecting {dir_index:05d}"
+                )
             cat_map = {}
             for cat, name in zip(CATEGORIES_2021, pieces[1:7]):
                 if name in self.categories_index[cat]:
@@ -189,7 +204,9 @@ class INaturalistBase(VisionDataset):
         """
 
         cat_id, fname = self.index[index]
-        img = PIL.Image.open(os.path.join(self.root, self.all_categories[cat_id], fname))
+        img = PIL.Image.open(
+            os.path.join(self.root, self.all_categories[cat_id], fname)
+        )
 
         target: Any = []
         for t in self.target_type:
@@ -205,8 +222,7 @@ class INaturalistBase(VisionDataset):
         if self.target_transform is not None:
             target = self.target_transform(target)
 
-        return {'image': image, 'class': torch.tensor([target])}
-
+        return {"image": image, "class": torch.tensor([target])}
 
     def __len__(self) -> int:
         return len(self.index)
@@ -229,8 +245,9 @@ class INaturalistBase(VisionDataset):
                 for name, id in self.categories_index[category_type].items():
                     if id == category_id:
                         return name
-                raise ValueError(f"Invalid category id {category_id} for {category_type}")
-
+                raise ValueError(
+                    f"Invalid category id {category_id} for {category_type}"
+                )
 
     def _check_integrity(self) -> bool:
         return os.path.exists(self.root) and len(os.listdir(self.root)) > 0
@@ -245,33 +262,45 @@ class INaturalistBase(VisionDataset):
         base_root = os.path.dirname(self.root)
 
         download_and_extract_archive(
-            DATASET_URLS[self.version], base_root, filename=f"{self.version}.tgz", md5=DATASET_MD5[self.version]
+            DATASET_URLS[self.version],
+            base_root,
+            filename=f"{self.version}.tgz",
+            md5=DATASET_MD5[self.version],
         )
 
-        orig_dir_name = os.path.join(base_root, os.path.basename(DATASET_URLS[self.version]).rstrip(".tar.gz"))
+        orig_dir_name = os.path.join(
+            base_root, os.path.basename(DATASET_URLS[self.version]).rstrip(".tar.gz")
+        )
         if not os.path.exists(orig_dir_name):
             raise RuntimeError(f"Unable to find downloaded files at {orig_dir_name}")
         os.rename(orig_dir_name, self.root)
-        print(f"Dataset version '{self.version}' has been downloaded and prepared for use")
+        print(
+            f"Dataset version '{self.version}' has been downloaded and prepared for use"
+        )
 
 
 class INaturalistTrain(INaturalistBase):
-    def __init__(self, root: str, resolution: Union[Tuple[int, int], int] = 256) -> None:
-        transform = T.Compose([
-            T.Resize(resolution),
-            T.RandomCrop(resolution),
-            T.RandomHorizontalFlip(),
-            T.ToTensor()
-        ])
+    def __init__(
+        self, root: str, resolution: Union[Tuple[int, int], int] = 256
+    ) -> None:
+        transform = T.Compose(
+            [
+                T.Resize(resolution),
+                T.RandomCrop(resolution),
+                T.RandomHorizontalFlip(),
+                T.ToTensor(),
+            ]
+        )
 
-        super().__init__(root=root, version='2021_train', transform=transform)
+        super().__init__(root=root, version="2021_train", transform=transform)
+
 
 class INaturalistValidation(INaturalistBase):
-    def __init__(self, root: str, resolution: Union[Tuple[int, int], int] = 256) -> None:
-        transform = T.Compose([
-            T.Resize(resolution),
-            T.CenterCrop(resolution),
-            T.ToTensor()
-        ])
+    def __init__(
+        self, root: str, resolution: Union[Tuple[int, int], int] = 256
+    ) -> None:
+        transform = T.Compose(
+            [T.Resize(resolution), T.CenterCrop(resolution), T.ToTensor()]
+        )
 
-        super().__init__(root=root, version='2021_valid', transform=transform)
+        super().__init__(root=root, version="2021_valid", transform=transform)

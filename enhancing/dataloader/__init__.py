@@ -12,15 +12,20 @@ from torch.utils.data import DataLoader
 from ..utils.general import initialize_from_config
 from hiq.cv_torch import *
 
+
 class DataModuleFromConfig(pl.LightningDataModule):
-    def __init__(self, batch_size: int, train: Optional[OmegaConf] = None,
-                 validation: Optional[OmegaConf] = None,
-                 test: Optional[OmegaConf] = None,
-                 num_workers: Optional[int] = None):
+    def __init__(
+        self,
+        batch_size: int,
+        train: Optional[OmegaConf] = None,
+        validation: Optional[OmegaConf] = None,
+        test: Optional[OmegaConf] = None,
+        num_workers: Optional[int] = None,
+    ):
         super().__init__()
         self.dataset_configs = dict()
         self.batch_size = batch_size
-        self.num_workers = num_workers if num_workers is not None else batch_size*2
+        self.num_workers = num_workers if num_workers is not None else batch_size * 2
         if train is not None:
             self.dataset_configs["train"] = train
             self.train_dataloader = self._train_dataloader
@@ -32,32 +37,39 @@ class DataModuleFromConfig(pl.LightningDataModule):
             self.test_dataloader = self._test_dataloader
 
     def prepare_data(self):
-        #for data_cfg in self.dataset_configs.values():
+        # for data_cfg in self.dataset_configs.values():
         #    initialize_from_config(data_cfg)
         pass
 
     def setup(self, stage=None):
-        #self.datasets = dict(
+        # self.datasets = dict(
         #    (k, initialize_from_config(self.dataset_configs[k]))
         #    for k in self.dataset_configs)
-        self.datasets = get_cv_dataset(name="full_size",
-                                       image_size=256,
-                                       split = None,
-                                       batch_size=self.batch_size,
-                                       num_workers=self.num_workers,
-                                       return_type="dict")
+        self.datasets = get_cv_dataset(
+            name="full_size",
+            image_size=256,
+            split=None,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            return_type="dict",
+        )
         print(self.datasets)
 
     def _train_dataloader(self):
-        return DataLoader(self.datasets["train"], batch_size=self.batch_size,
-                          num_workers=self.num_workers, shuffle=True)
+        return DataLoader(
+            self.datasets["train"],
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            shuffle=True,
+        )
 
     def _val_dataloader(self):
         d = self.datasets["validation"]
-        return DataLoader(d,
-                          batch_size=self.batch_size,
-                          num_workers=self.num_workers)
+        return DataLoader(d, batch_size=self.batch_size, num_workers=self.num_workers)
 
     def _test_dataloader(self):
-        return DataLoader(self.datasets["test"], batch_size=self.batch_size,
-                          num_workers=self.num_workers)
+        return DataLoader(
+            self.datasets["test"],
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+        )
