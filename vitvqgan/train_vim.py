@@ -1,9 +1,4 @@
-# ------------------------------------------------------------------------------------
-# Enhancing Transformers
-# Copyright (c) 2022 Thuan H. Nguyen. All Rights Reserved.
-# Licensed under the MIT License [see LICENSE for details]
-# ------------------------------------------------------------------------------------
-
+import os
 import argparse
 from pathlib import Path
 from omegaconf import OmegaConf
@@ -15,8 +10,10 @@ from vitvqgan.utils.general import (
     setup_callbacks,
 )
 
+here = os.path.dirname(os.path.abspath(__file__))
+
 if __name__ == "__main__":
-    from hiq import print_model
+    from hiq import print_model, deterministic
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", type=str, default="imagenet_vitvq_small")
@@ -35,7 +32,7 @@ if __name__ == "__main__":
     pl.seed_everything(args.seed)
 
     # Load configuration
-    config = get_config_from_file(Path("configs") / (args.config + ".yaml"))
+    config = get_config_from_file(f"{here}" / Path("configs") / (args.config + ".yaml"))
     exp_config = OmegaConf.create(
         {
             "name": args.config,

@@ -1,4 +1,4 @@
-name: enhancing
+name: vim
 channels:
   - pytorch
   - defaults

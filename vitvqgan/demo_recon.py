@@ -10,9 +10,6 @@ from PIL import Image
 import numpy as np
 from hiq import deterministic
 
-# Set the environment variable for CUDA architecture
-os.environ["TORCH_CUDA_ARCH_LIST"] = "8.9"  # For RTX 4090
-
 
 def save_images(images, directory):
     if not os.path.exists(directory):
