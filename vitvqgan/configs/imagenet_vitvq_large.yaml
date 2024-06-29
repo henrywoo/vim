@@ -1,5 +1,5 @@
 model:
-    target: enhancing.modules.stage1.vitvqgan.ViTVQ
+    target: vitvqgan.modules.stage1.vit_vqgan.ViTVQ
     params:
         image_key: image
         image_size: 256
@@ -18,7 +18,7 @@ model:
             embed_dim: 32
             n_embed: 8192
         loss:
-            target: enhancing.losses.vqperceptual.VQLPIPSWithDiscriminator
+            target: vitvqgan.losses.vqperceptual.VQLPIPSWithDiscriminator
             params:
                 loglaplace_weight: 0.0
                 loggaussian_weight: 1.0
@@ -26,18 +26,18 @@ model:
                 adversarial_weight: 0.1
 
 dataset:
-    target: enhancing.dataloader.DataModuleFromConfig
+    target: vitvqgan.dataloader.DataModuleFromConfig
     params:
         batch_size: 2
         num_workers: 4
         train:
-            target: enhancing.dataloader.imagenet.ImageNetTrain
+            target: vitvqgan.dataloader.imagenet.ImageNetTrain
             params:
                 root: data/ilsvrc2012
                 resolution: 256
 
         validation:
-            target: enhancing.dataloader.imagenet.ImageNetValidation
+            target: vitvqgan.dataloader.imagenet.ImageNetValidation
             params:
                 root: data/ilsvrc2012
                 resolution: 256

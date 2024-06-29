@@ -6,9 +6,9 @@ import torch.nn as nn
 from torch.optim import lr_scheduler
 import pytorch_lightning as pl
 
-from .layers import ViTEncoder as Encoder, ViTDecoder as Decoder
-from .quantizers import VectorQuantizer, GumbelQuantizer
-from ...utils.general import initialize_from_config
+from vitvqgan.modules.stage1.layers import ViTEncoder as Encoder, ViTDecoder as Decoder
+from vitvqgan.modules.stage1.quantizers import VectorQuantizer, GumbelQuantizer
+from vitvqgan.utils.general import initialize_from_config
 
 
 class ViTVQ(pl.LightningModule):
@@ -48,7 +48,7 @@ class ViTVQ(pl.LightningModule):
         return dec, diff
 
     def init_from_ckpt(self, path: str, ignore_keys: List[str] = list()):
-        sd = torch.load(path, map_location="cpu")["state_dict"]
+        sd = torch.load(path, map_location="cuda:0")["state_dict"]
         keys = list(sd.keys())
         for k in keys:
             for ik in ignore_keys:
@@ -342,3 +342,78 @@ class ViTVQGumbel(ViTVQ):
             on_epoch=True,
         )
         return loss
+
+
+if __name__ == "__main__":
+    import torch
+    from omegaconf import OmegaConf
+    from skimage import data
+    from skimage.transform import resize
+    import matplotlib.pyplot as plt
+
+    # Define the configuration using OmegaConf
+    config = OmegaConf.create(
+        {
+            "image_key": "image",
+            "image_size": 256,
+            "patch_size": 8,
+            "encoder": {"dim": 512, "depth": 8, "heads": 8, "mlp_dim": 2048},
+            "decoder": {"dim": 512, "depth": 8, "heads": 8, "mlp_dim": 2048},
+            "quantizer": {"embed_dim": 32, "n_embed": 8192},
+            "loss": {
+                "target": "vitvqgan.losses.vqperceptual.VQLPIPSWithDiscriminator",
+                "params": {
+                    "loglaplace_weight": 0.0,
+                    "loggaussian_weight": 1.0,
+                    "perceptual_weight": 0.1,
+                    "adversarial_weight": 0.1,
+                },
+            },
+        }
+    )
+
+    # Initialize the model with the given config
+    model = ViTVQ(
+        image_key=config.image_key,
+        image_size=config.image_size,
+        patch_size=config.patch_size,
+        encoder=config.encoder,
+        decoder=config.decoder,
+        quantizer=config.quantizer,
+        loss=config.loss,
+    )
+
+    # Check if a GPU is available and move the model to the GPU if it is
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+
+    # Load model checkpoint
+    checkpoint_path = "mbin/imagenet_vitvq_small.ckpt"
+    model.init_from_ckpt(checkpoint_path)
+
+    # Set the model to evaluation mode
+    model.eval()
+
+    # Load and preprocess the coffee image
+    image = data.coffee()
+    image_resized = resize(image, (256, 256), anti_aliasing=True)
+    input_data = (
+        torch.tensor(image_resized).permute(2, 0, 1).unsqueeze(0).float().to(device)
+    )
+
+    # Run inference
+    with torch.no_grad():
+        output, extra = model(input_data)
+        output_image = output.squeeze(0).permute(1, 2, 0).cpu().numpy()
+
+    # Plot the input and output images
+    fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+    axes[0].imshow(image_resized)
+    axes[0].set_title("Input Image")
+    axes[0].axis("off")
+
+    axes[1].imshow(output_image)
+    axes[1].set_title("Output Image")
+    axes[1].axis("off")
+
+    plt.show()

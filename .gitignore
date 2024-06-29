@@ -1,5 +1,7 @@
 _build/
 tmp
+mbin/*
+bin/*
 gen/dep_labels.dot
 gen/dependencies.png
 gen/dependencies2.png
