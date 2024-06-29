@@ -58,7 +58,7 @@ class DataModuleFromConfig(pl.LightningDataModule):
             num_workers=self.num_workers,
             return_type="dict",
         )
-        print(self.datasets)
+        #print(self.datasets)
 
     def _train_dataloader(self):
         return DataLoader(
