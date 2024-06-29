@@ -45,6 +45,11 @@ class DataModuleFromConfig(pl.LightningDataModule):
         # self.datasets = dict(
         #    (k, initialize_from_config(self.dataset_configs[k]))
         #    for k in self.dataset_configs)
+        # datasets = get_cv_dataset(path=DS_PATH_IMAGENET1K, image_size=256,
+        #             split=None,
+        #             batch_size=self.batch_size,
+        #             num_workers=self.num_workers,
+        #             return_type="dict")
         self.datasets = get_cv_dataset(
             name="full_size",
             image_size=256,
