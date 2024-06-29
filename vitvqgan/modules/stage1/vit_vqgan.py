@@ -344,6 +344,42 @@ class ViTVQGumbel(ViTVQ):
         return loss
 
 
+small_config = OmegaConf.create(
+    {
+        "image_key": "image",
+        "image_size": 256,
+        "patch_size": 8,
+        "encoder": {"dim": 512, "depth": 8, "heads": 8, "mlp_dim": 2048},
+        "decoder": {"dim": 512, "depth": 8, "heads": 8, "mlp_dim": 2048},
+        "quantizer": {"embed_dim": 32, "n_embed": 8192},
+        "loss": {
+            "target": "vitvqgan.losses.vqperceptual.VQLPIPSWithDiscriminator",
+            "params": {
+                "loglaplace_weight": 0.0,
+                "loggaussian_weight": 1.0,
+                "perceptual_weight": 0.1,
+                "adversarial_weight": 0.1,
+            },
+        },
+    }
+)
+
+base_config = OmegaConf.merge(
+    small_config,
+    {
+        "encoder": {"dim": 768, "depth": 12, "heads": 12, "mlp_dim": 3072},
+        "decoder": {"dim": 768, "depth": 12, "heads": 12, "mlp_dim": 3072},
+    },
+)
+
+large_config = OmegaConf.merge(
+    small_config,
+    {
+        "encoder": {"dim": 512, "depth": 8, "heads": 8, "mlp_dim": 2048},
+        "decoder": {"dim": 1280, "depth": 32, "heads": 16, "mlp_dim": 5120},
+    },
+)
+
 if __name__ == "__main__":
     import torch
     from omegaconf import OmegaConf
@@ -352,26 +388,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     # Define the configuration using OmegaConf
-    config = OmegaConf.create(
-        {
-            "image_key": "image",
-            "image_size": 256,
-            "patch_size": 8,
-            "encoder": {"dim": 512, "depth": 8, "heads": 8, "mlp_dim": 2048},
-            "decoder": {"dim": 512, "depth": 8, "heads": 8, "mlp_dim": 2048},
-            "quantizer": {"embed_dim": 32, "n_embed": 8192},
-            "loss": {
-                "target": "vitvqgan.losses.vqperceptual.VQLPIPSWithDiscriminator",
-                "params": {
-                    "loglaplace_weight": 0.0,
-                    "loggaussian_weight": 1.0,
-                    "perceptual_weight": 0.1,
-                    "adversarial_weight": 0.1,
-                },
-            },
-        }
-    )
-
+    config = base_config
     # Initialize the model with the given config
     model = ViTVQ(
         image_key=config.image_key,
@@ -388,7 +405,7 @@ if __name__ == "__main__":
     model.to(device)
 
     # Load model checkpoint
-    checkpoint_path = "mbin/imagenet_vitvq_small.ckpt"
+    checkpoint_path = "mbin/imagenet_vitvq_base.ckpt"
     model.init_from_ckpt(checkpoint_path)
 
     # Set the model to evaluation mode
@@ -415,5 +432,5 @@ if __name__ == "__main__":
     axes[1].imshow(output_image)
     axes[1].set_title("Output Image")
     axes[1].axis("off")
-
+    plt.savefig("base.png")
     plt.show()

@@ -24,6 +24,8 @@
   </ol>
 </details>
 
+![](vitvqgan.png)
+
 ## News
 ***09/09***
 1. The release weight of ViT-VQGAN small which is trained on ImageNet at [here](https://drive.google.com/file/d/1jbjD4q0iJpXrRMVSYJRIvM_94AxA1EqJ/view?usp=sharing)

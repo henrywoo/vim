@@ -1,7 +1,7 @@
+torch-fidelity
 ftfy
 lpips
 regex
-torch
 torchvision
 pytorch-lightning
 einops
@@ -13,3 +13,4 @@ wandb
 albumentations
 kornia
 Pillow
+torch
