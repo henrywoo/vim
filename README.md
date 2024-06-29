@@ -4,12 +4,7 @@
 
 This is an unofficial implementation of both [ViT-VQGAN](https://arxiv.org/abs/2110.04627) and [RQ-VAE](https://arxiv.org/abs/2110.04627) in Pytorch. ViT-VQGAN is a simple ViT-based Vector Quantized AutoEncoder while RQ-VAE introduces a new residual quantization scheme. Further details can be viewed in the papers
 
-![](vitvqgan.png)
-
-## Checkpoints
-1. The release weight of ViT-VQGAN small which is trained on ImageNet at [here](https://drive.google.com/file/d/1jbjD4q0iJpXrRMVSYJRIvM_94AxA1EqJ/view?usp=sharing)
-2. First release weight of ViT-VQGAN base which is trained on ImageNet at [here](https://drive.google.com/file/d/1syv0t3nAJ-bETFgFpztw9cPXghanUaM6/view?usp=sharing)
-3. Add a colab notebook at [here](https://colab.research.google.com/drive/1y-PzYhkNQbhKj3i459pWd6TAO28SnF5h?usp=sharing)
+![](https://raw.githubusercontent.com/henrywoo/vim/main/vitvqgan.png)
 
 
 ## Installation
@@ -32,12 +27,19 @@ You can add more options too:
 python -m vitvqgan.train_vim -c imagenet_vitvq_small -lr 0.00001 -e 10
 ```
 
+It uses `Imagenette` as the training dataset for demo purpose, to change it, modify [dataloader init file](vitvqgan/dataloader/__init__.py).
+
 **Inference:**
 - download checkpoints from above in mbin folder
 - Run the following command:
 ```
 python -m vitvqgan.demo_recon
 ```
+
+## Checkpoints
+
+- [ViT-VQGAN Small](https://drive.google.com/file/d/1jbjD4q0iJpXrRMVSYJRIvM_94AxA1EqJ/view?usp=sharing) 
+- [ViT-VQGAN Base](https://drive.google.com/file/d/1syv0t3nAJ-bETFgFpztw9cPXghanUaM6/view?usp=sharing)
 
 
 ## Acknowledgements

@@ -17,7 +17,6 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", type=str, default="imagenet_vitvq_small")
-    parser.add_argument("-s", "--seed", type=int, default=0)
     parser.add_argument("-nn", "--num_nodes", type=int, default=1)
     parser.add_argument("-ng", "--num_gpus", type=int, default=1)
     parser.add_argument("-u", "--update_every", type=int, default=1)
@@ -27,9 +26,6 @@ if __name__ == "__main__":
     parser.add_argument("-b", "--batch_frequency", type=int, default=750)
     parser.add_argument("-m", "--max_images", type=int, default=4)
     args = parser.parse_args()
-
-    # Set random seed
-    pl.seed_everything(args.seed)
 
     # Load configuration
     config = get_config_from_file(f"{here}" / Path("configs") / (args.config + ".yaml"))
