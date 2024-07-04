@@ -16,7 +16,7 @@ pip install vitvqgan
 
 ## Training
 
-**Train the model:**
+**Stage 1 - VQ Training:**
 ```
 python -m vitvqgan.train_vim
 ```
