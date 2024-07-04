@@ -76,6 +76,23 @@ class BaseQuantizer(nn.Module):
         return z_q, loss, encoding_indices
 
 
+import torch
+import torch.nn.functional as tnf
+
+_eps: float = 1e-10
+
+
+def book_entropy(x: torch.Tensor, book_t):
+    logits = x.float() @ book_t
+    probs = tnf.softmax(logits, -1)
+    log_probs = tnf.log_softmax(logits + _eps, -1)
+    entropy = -torch.sum(probs * log_probs, -1)
+
+    entro_mean = torch.mean(entropy)
+    mean_probs = probs.mean(dim=tuple(range(probs.dim() - 1)))
+    mean_entro = -torch.sum(mean_probs * torch.log(mean_probs + _eps))
+    return entro_mean, mean_entro, entro_mean - mean_entro
+
 class VectorQuantizer(BaseQuantizer):
     def __init__(
         self,
@@ -105,6 +122,8 @@ class VectorQuantizer(BaseQuantizer):
             - 2 * torch.einsum("b d, n d -> b n", z_reshaped_norm, embedding_norm)
         )
 
+        entro_mean, mean_entro, entro_loss = book_entropy(z_reshaped_norm, embedding_norm.t())
+
         encoding_indices = torch.argmin(d, dim=1).unsqueeze(1)
         encoding_indices = encoding_indices.view(*z.shape[:-1])
 
@@ -115,6 +134,8 @@ class VectorQuantizer(BaseQuantizer):
         loss = self.beta * torch.mean((z_qnorm.detach() - z_norm) ** 2) + torch.mean(
             (z_qnorm - z_norm.detach()) ** 2
         )
+
+        loss += 1.0 * entro_loss
 
         return z_qnorm, loss, encoding_indices
 
