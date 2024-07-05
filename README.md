@@ -24,7 +24,7 @@ python -m vitvqgan.train_vim
 You can add more options too:
 
 ```python
-python -m vitvqgan.train_vim -c imagenet_vitvq_small -lr 0.00001 -e 10
+python -m vitvqgan.train_vim -c imagenet_vitvq_small_a100 -lr 0.00001 -e 100 -ng 6
 ```
 
 It uses `Imagenette` as the training dataset for demo purpose, to change it, modify [dataloader init file](vitvqgan/dataloader/__init__.py).
