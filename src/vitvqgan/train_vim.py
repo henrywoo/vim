@@ -60,7 +60,7 @@ if __name__ == "__main__":
         precision=16 if exp_config.use_amp else 32,
         callbacks=callbacks,
         accelerator="gpu",
-        devices=1,
+        devices=args.num_gpus,
         num_nodes=args.num_nodes,
         accumulate_grad_batches=exp_config.update_every,
         logger=logger,
