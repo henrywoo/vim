@@ -14,3 +14,5 @@ albumentations
 kornia
 Pillow
 torch
+datasets
+hiq-python
