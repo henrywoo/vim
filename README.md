@@ -36,6 +36,15 @@ It uses `Imagenette` as the training dataset for demo purpose, to change it, mod
 python -m vitvqgan.demo_recon
 ```
 
+This code has cusomtized cuda code, so it need gcc to support C++17.
+
+If you don't have latest gcc, please consider the following commands:
+
+```
+conda install ninja
+conda install -c conda-forge gcc_linux-64 gxx_linux-64
+```
+
 ## Checkpoints
 
 - [ViT-VQGAN Small](https://drive.google.com/file/d/1jbjD4q0iJpXrRMVSYJRIvM_94AxA1EqJ/view?usp=sharing) 

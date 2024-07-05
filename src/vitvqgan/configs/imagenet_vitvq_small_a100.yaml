@@ -1,0 +1,43 @@
+model:
+    target: vitvqgan.modules.stage1.vit_vqgan.ViTVQ
+    params:
+        image_key: image
+        image_size: 256
+        patch_size: 8
+        encoder:
+            dim: 512
+            depth: 8
+            heads: 8
+            mlp_dim: 2048
+        decoder:
+            dim: 512
+            depth: 8
+            heads: 8
+            mlp_dim: 2048
+        quantizer:
+            embed_dim: 32
+            n_embed: 8192
+        loss:
+            target: vitvqgan.losses.vqperceptual.VQLPIPSWithDiscriminator
+            params:
+                loglaplace_weight: 0.0
+                loggaussian_weight: 1.0
+                perceptual_weight: 0.1
+                adversarial_weight: 0.1
+
+dataset:
+    target: vitvqgan.dataloader.DataModuleFromConfig
+    params:
+        batch_size: 24
+        num_workers: 8
+        train:
+            target: vitvqgan.dataloader.imagenet.ImageNetTrain
+            params:
+                root: data/ilsvrc2012
+                resolution: 256
+
+        validation:
+            target: vitvqgan.dataloader.imagenet.ImageNetValidation
+            params:
+                root: data/ilsvrc2012
+                resolution: 256
