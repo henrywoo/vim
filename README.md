@@ -43,6 +43,10 @@ If you don't have latest gcc, please consider the following commands:
 ```
 conda install ninja
 conda install -c conda-forge gcc_linux-64 gxx_linux-64
+
+export CC=/home/xyz/miniconda3/envs/abc/bin/x86_64-conda-linux-gnu-gcc
+export CXX=/home/xyz/miniconda3/envs/abc/bin/x86_64-conda-linux-gnu-g++
+export PATH=/home/xyz/miniconda3/envs/abc/bin:$PATH
 ```
 
 ## Checkpoints
