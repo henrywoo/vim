@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     # Build trainer
     trainer = pl.Trainer(
-        strategy='ddp_find_unused_parameters_true',
+        strategy="ddp_find_unused_parameters_true",
         max_epochs=exp_config.epochs,
         precision=16 if exp_config.use_amp else 32,
         callbacks=callbacks,

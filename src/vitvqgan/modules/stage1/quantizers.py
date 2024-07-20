@@ -93,6 +93,7 @@ def book_entropy(x: torch.Tensor, book_t):
     mean_entro = -torch.sum(mean_probs * torch.log(mean_probs + _eps))
     return entro_mean, mean_entro, entro_mean - mean_entro
 
+
 class VectorQuantizer(BaseQuantizer):
     def __init__(
         self,
@@ -122,7 +123,9 @@ class VectorQuantizer(BaseQuantizer):
             - 2 * torch.einsum("b d, n d -> b n", z_reshaped_norm, embedding_norm)
         )
 
-        entro_mean, mean_entro, entro_loss = book_entropy(z_reshaped_norm, embedding_norm.t())
+        entro_mean, mean_entro, entro_loss = book_entropy(
+            z_reshaped_norm, embedding_norm.t()
+        )
 
         encoding_indices = torch.argmin(d, dim=1).unsqueeze(1)
         encoding_indices = encoding_indices.view(*z.shape[:-1])

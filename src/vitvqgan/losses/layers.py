@@ -423,48 +423,23 @@ class StyleDiscriminator(nn.Module):
             EqualLinear(channels[4], 1),
         )
 
-    #def forward(self, x):
-    #    out = self.blocks(x)
-    #    batch, channel, height, width = out.shape
-
-    #    group = min(batch, self.stddev_group)
-    #    group = batch // (batch // group)
-
-    #    #stddev = out.view(
-    #    #    group, -1, self.stddev_feat, channel // self.stddev_feat, height, width
-    #    #)
-    #    stddev = out.view(4, 19, 1, 512, 4, 4)
-    #    stddev = torch.sqrt(stddev.var(0, unbiased=False) + 1e-8)
-    #    stddev = stddev.mean([2, 3, 4], keepdims=True).squeeze(2)
-    #    stddev = stddev.repeat(group, 1, height, width)
-    #    out = torch.cat([out, stddev], 1)
-
-    #    out = self.final_conv(out)
-    #    out = out.view(out.shape[0], -1)
-    #    out = self.final_linear(out)
-
-    #    return out.squeeze()
-
     def forward(self, x):
         out = self.blocks(x)
         batch, channel, height, width = out.shape
-    
+
         group = min(batch, self.stddev_group)
         group = batch // (batch // group)
-    
-        # Dynamically calculate the remaining dimension
-        stddev_feat = channel // (channel // group)
-        new_shape = [group, batch // group, self.stddev_feat, channel // self.stddev_feat, height, width]
-    
-        stddev = out.view(new_shape)
+
+        stddev = out.view(
+            group, -1, self.stddev_feat, channel // self.stddev_feat, height, width
+        )
         stddev = torch.sqrt(stddev.var(0, unbiased=False) + 1e-8)
         stddev = stddev.mean([2, 3, 4], keepdims=True).squeeze(2)
         stddev = stddev.repeat(group, 1, height, width)
         out = torch.cat([out, stddev], 1)
-    
+
         out = self.final_conv(out)
         out = out.view(out.shape[0], -1)
         out = self.final_linear(out)
-    
-        return out.squeeze()
 
+        return out.squeeze()
