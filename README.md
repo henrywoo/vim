@@ -70,6 +70,10 @@ conda activate vim
 
 ![](imgs/small.png)
 
+- After training 22 epochs
+
+![](imgs/small_epoch_22.png)
+
 ## Acknowledgements
 
 The repo is modified from [here](https://github.com/thuanz123/enhancing-transformers) with updates to latest dependencies and to be easily run in consumer-grade GPU for learning purpose.
