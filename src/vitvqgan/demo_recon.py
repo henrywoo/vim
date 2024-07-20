@@ -39,7 +39,7 @@ if __name__ == "__main__":
     model.to(device)
 
     # Load model checkpoint
-    checkpoint_path = "mbin/imagenet_vitvq_small.ckpt"
+    checkpoint_path = "/home/fuhwu/workspace/vim/experiments/imagenet_vitvq_small_a100_ine1k/05072024_054557/ckpt/imagenet_vitvq_small_a100_ine1k-epoch=22.ckpt"
     model.init_from_ckpt(checkpoint_path)
 
     # Set the model to evaluation mode
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     axes[1].imshow(output_image)
     axes[1].set_title(f"Output Image\nFID Score: {fid_score:.2f}")
     axes[1].axis("off")
-    plt.savefig("imgs/small.png")
+    plt.savefig("imgs/small_epoch22.png")
     plt.show()
 
     # Clean up

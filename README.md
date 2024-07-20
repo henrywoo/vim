@@ -49,6 +49,12 @@ export CXX=/home/xyz/miniconda3/envs/abc/bin/x86_64-conda-linux-gnu-g++
 export PATH=/home/xyz/miniconda3/envs/abc/bin:$PATH
 ```
 
+Use this:
+
+```
+conda activate vim
+```
+
 ## Checkpoints
 
 - [ViT-VQGAN Small](https://drive.google.com/file/d/1jbjD4q0iJpXrRMVSYJRIvM_94AxA1EqJ/view?usp=sharing) 
