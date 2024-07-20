@@ -28,7 +28,7 @@ model:
 dataset:
     target: vitvqgan.dataloader.DataModuleFromConfig
     params:
-        batch_size: 24
+        batch_size: 12
         num_workers: 8
         train:
             target: vitvqgan.dataloader.imagenet.ImageNetTrain
