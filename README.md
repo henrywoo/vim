@@ -54,6 +54,15 @@ export PATH=/home/xyz/miniconda3/envs/abc/bin:$PATH
 - [ViT-VQGAN Small](https://drive.google.com/file/d/1jbjD4q0iJpXrRMVSYJRIvM_94AxA1EqJ/view?usp=sharing) 
 - [ViT-VQGAN Base](https://drive.google.com/file/d/1syv0t3nAJ-bETFgFpztw9cPXghanUaM6/view?usp=sharing)
 
+## FID
+
+- Base
+
+![](imgs/base.png)
+
+- Small
+
+![](imgs/small.png)
 
 ## Acknowledgements
 
