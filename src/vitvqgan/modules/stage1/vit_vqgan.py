@@ -1,3 +1,4 @@
+import os
 from typing import List, Tuple, Dict, Any, Optional
 from omegaconf import OmegaConf
 
@@ -40,7 +41,10 @@ class ViTVQ(pl.LightningModule):
         self.post_quant = nn.Linear(quantizer.embed_dim, decoder.dim)
 
         if path is not None:
-            self.init_from_ckpt(path, ignore_keys)
+            if os.path.exists(path):
+                self.init_from_ckpt(path, ignore_keys)
+            else:
+                print(f"🔥 Warning: Path {path} does not exist!!!")
 
     def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
         quant, diff = self.encode(x)
@@ -50,8 +54,8 @@ class ViTVQ(pl.LightningModule):
     def init_from_ckpt(self, path: str, ignore_keys: List[str] = list()):
         sd = torch.load(path, map_location="cuda:0")["state_dict"]
         keys = list(sd.keys())
-        for k in keys:
-            for ik in ignore_keys:
+        for ik in ignore_keys:
+            for k in keys:
                 if k.startswith(ik):
                     print("Deleting key {} from state_dict.".format(k))
                     del sd[k]

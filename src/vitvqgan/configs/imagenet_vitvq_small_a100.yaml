@@ -1,5 +1,6 @@
 model:
     target: vitvqgan.modules.stage1.vit_vqgan.ViTVQ
+    path: experiments/imagenet_vitvq_small/28062024_221010/ckpt/imagenet_vitvq_small-epoch=01.ckpt
     params:
         image_key: image
         image_size: 256
